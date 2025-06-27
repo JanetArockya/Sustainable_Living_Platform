@@ -1,81 +1,65 @@
 import React, { useState } from 'react';
-import { Header } from './components/Layout/Header';
-import { Sidebar } from './components/Layout/Sidebar';
-import { Dashboard } from './components/Dashboard/Dashboard';
-import { CarbonCalculator } from './components/Calculator/CarbonCalculator';
-import { PersonalizedTips } from './components/Tips/PersonalizedTips';
-import { LocalResources } from './components/Resources/LocalResources';
-import { CommunityChallenge } from './components/Challenges/CommunityChallenge';
-import { EducationalContent } from './components/Education/EducationalContent';
-import { UserProfile } from './components/Profile/UserProfile';
-import { SmartHomeIntegration } from './components/SmartHome/SmartHomeIntegration';
-import { SustainabilityAssistant } from './components/AI/SustainabilityAssistant';
-import { AdvancedAnalytics } from './components/Analytics/AdvancedAnalytics';
-import { SustainableShoppingAssistant } from './components/Shopping/SustainableShoppingAssistant';
-import { TransportationOptimization } from './components/Transportation/TransportationOptimization';
-import { SmartNotifications } from './components/Notifications/SmartNotifications';
-import { mockUser } from './data/mockData';
+import { AuthProvider, useAuth } from './contexts/AuthContext';
+import { LoginPage } from './components/Auth/LoginPage';
+import { ModernHeader } from './components/Layout/ModernHeader';
+import { BottomNavigation } from './components/Layout/BottomNavigation';
+import { ModernDashboard } from './components/Dashboard/ModernDashboard';
+import { ModernChallenges } from './components/Challenges/ModernChallenges';
+import { CommunityHub } from './components/Community/CommunityHub';
+import { ModernProfile } from './components/Profile/ModernProfile';
 
-function App() {
-  const [sidebarOpen, setSidebarOpen] = useState(false);
-  const [activeSection, setActiveSection] = useState('dashboard');
+const AppContent: React.FC = () => {
+  const { user, isLoading } = useAuth();
+  const [activeTab, setActiveTab] = useState('dashboard');
 
-  const renderActiveSection = () => {
-    switch (activeSection) {
+  if (isLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex items-center justify-center">
+        <div className="text-center">
+          <div className="w-16 h-16 border-4 border-emerald-500 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+          <p className="text-gray-600">Loading...</p>
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <LoginPage />;
+  }
+
+  const renderActiveTab = () => {
+    switch (activeTab) {
       case 'dashboard':
-        return <Dashboard />;
-      case 'calculator':
-        return <CarbonCalculator />;
-      case 'tips':
-        return <PersonalizedTips />;
-      case 'resources':
-        return <LocalResources />;
+        return <ModernDashboard />;
       case 'challenges':
-        return <CommunityChallenge />;
-      case 'education':
-        return <EducationalContent />;
+        return <ModernChallenges />;
+      case 'community':
+        return <CommunityHub />;
       case 'profile':
-        return <UserProfile />;
-      case 'smart-home':
-        return <SmartHomeIntegration />;
-      case 'ai-assistant':
-        return <SustainabilityAssistant />;
-      case 'analytics':
-        return <AdvancedAnalytics />;
-      case 'shopping':
-        return <SustainableShoppingAssistant />;
-      case 'transportation':
-        return <TransportationOptimization />;
-      case 'notifications':
-        return <SmartNotifications />;
+        return <ModernProfile />;
       default:
-        return <Dashboard />;
+        return <ModernDashboard />;
     }
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Header
-        onMenuToggle={() => setSidebarOpen(!sidebarOpen)}
-        userName={mockUser.name}
-        userAvatar={mockUser.avatar}
-      />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors">
+      <ModernHeader />
       
-      <div className="flex">
-        <Sidebar
-          isOpen={sidebarOpen}
-          onClose={() => setSidebarOpen(false)}
-          activeSection={activeSection}
-          onSectionChange={setActiveSection}
-        />
-        
-        <main className="flex-1 p-4 md:p-6 lg:p-8 md:ml-64">
-          <div className="max-w-7xl mx-auto">
-            {renderActiveSection()}
-          </div>
-        </main>
-      </div>
+      <main className="container mx-auto px-4 py-6 max-w-4xl">
+        {renderActiveTab()}
+      </main>
+      
+      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
     </div>
+  );
+};
+
+function App() {
+  return (
+    <AuthProvider>
+      <AppContent />
+    </AuthProvider>
   );
 }
 
