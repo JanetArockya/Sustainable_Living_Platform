@@ -1,7 +1,9 @@
 import React, { createContext, useContext, useState, useEffect, ReactNode } from 'react';
+import { supabase } from '../lib/supabase';
+import type { User as SupabaseUser } from '@supabase/supabase-js';
 
 interface User {
-  id: number;
+  id: string;
   email: string;
   name: string;
   avatar?: string;
@@ -18,10 +20,10 @@ interface User {
 
 interface AuthContextType {
   user: User | null;
-  token: string | null;
-  login: (email: string, password: string) => Promise<void>;
-  register: (email: string, password: string, name: string) => Promise<void>;
-  logout: () => void;
+  supabaseUser: SupabaseUser | null;
+  signUp: (email: string, password: string, name: string) => Promise<void>;
+  signIn: (email: string, password: string) => Promise<void>;
+  signOut: () => Promise<void>;
   isLoading: boolean;
   logActivity: (activityType: string, activityData: any) => Promise<void>;
   saveMetric: (metricType: string, value: number, unit: string) => Promise<void>;
@@ -43,127 +45,160 @@ interface AuthProviderProps {
 
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
-  const [token, setToken] = useState<string | null>(null);
+  const [supabaseUser, setSupabaseUser] = useState<SupabaseUser | null>(null);
   const [isLoading, setIsLoading] = useState(true);
 
-  const API_BASE_URL = 'http://localhost:3001/api';
-
   useEffect(() => {
-    const storedToken = localStorage.getItem('token');
-    const storedUser = localStorage.getItem('user');
-    
-    if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser));
-    }
-    setIsLoading(false);
+    // Get initial session
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      if (session?.user) {
+        setSupabaseUser(session.user);
+        fetchUserProfile(session.user.id);
+      }
+      setIsLoading(false);
+    });
+
+    // Listen for auth changes
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange(async (event, session) => {
+      if (session?.user) {
+        setSupabaseUser(session.user);
+        await fetchUserProfile(session.user.id);
+      } else {
+        setSupabaseUser(null);
+        setUser(null);
+      }
+      setIsLoading(false);
+    });
+
+    return () => subscription.unsubscribe();
   }, []);
 
-  const login = async (email: string, password: string) => {
+  const fetchUserProfile = async (userId: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/login`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ email, password }),
-      });
+      const { data, error } = await supabase
+        .from('users')
+        .select('*')
+        .eq('id', userId)
+        .single();
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Login failed');
+      if (error) {
+        console.error('Error fetching user profile:', error);
+        return;
       }
 
-      const data = await response.json();
-      
-      setToken(data.token);
-      setUser(data.user);
-      
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
+      if (data) {
+        setUser({
+          id: data.id,
+          email: data.email,
+          name: data.name,
+          joinDate: data.created_at,
+          totalPoints: 2840, // Default values for demo
+          level: 7,
+          preferences: {
+            notifications: true,
+            sustainabilityTips: true,
+            weeklyReports: true,
+            challengeUpdates: true,
+          },
+        });
+      }
     } catch (error) {
-      throw error;
+      console.error('Error fetching user profile:', error);
     }
   };
 
-  const register = async (email: string, password: string, name: string) => {
+  const signUp = async (email: string, password: string, name: string) => {
     try {
-      const response = await fetch(`${API_BASE_URL}/register`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            name,
+          },
         },
-        body: JSON.stringify({ email, password, name }),
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.error || 'Registration failed');
+      if (error) {
+        throw error;
       }
 
-      const data = await response.json();
-      
-      setToken(data.token);
-      setUser(data.user);
-      
-      localStorage.setItem('token', data.token);
-      localStorage.setItem('user', JSON.stringify(data.user));
-    } catch (error) {
-      throw error;
+      if (data.user) {
+        // User profile will be created automatically via trigger
+        await fetchUserProfile(data.user.id);
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to create account');
     }
   };
 
-  const logout = () => {
-    setUser(null);
-    setToken(null);
-    localStorage.removeItem('token');
-    localStorage.removeItem('user');
+  const signIn = async (email: string, password: string) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithPassword({
+        email,
+        password,
+      });
+
+      if (error) {
+        throw error;
+      }
+
+      if (data.user) {
+        await fetchUserProfile(data.user.id);
+      }
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to sign in');
+    }
+  };
+
+  const signOut = async () => {
+    try {
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        throw error;
+      }
+      setUser(null);
+      setSupabaseUser(null);
+    } catch (error: any) {
+      throw new Error(error.message || 'Failed to sign out');
+    }
   };
 
   const logActivity = async (activityType: string, activityData: any) => {
-    if (!token) return;
-
-    try {
-      await fetch(`${API_BASE_URL}/user/activity`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ activityType, activityData }),
-      });
-    } catch (error) {
-      console.error('Failed to log activity:', error);
-    }
+    // For now, just log to console. In a real app, you'd save to Supabase
+    console.log('Activity logged:', { activityType, activityData });
   };
 
   const saveMetric = async (metricType: string, value: number, unit: string) => {
-    if (!token) return;
-
-    try {
-      await fetch(`${API_BASE_URL}/user/metrics`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${token}`,
-        },
-        body: JSON.stringify({ metricType, value, unit }),
-      });
-    } catch (error) {
-      console.error('Failed to save metric:', error);
-    }
+    // For now, just log to console. In a real app, you'd save to Supabase
+    console.log('Metric saved:', { metricType, value, unit });
   };
 
   const value = {
     user,
-    token,
-    login,
-    register,
-    logout,
+    supabaseUser,
+    signUp,
+    signIn,
+    signOut,
     isLoading,
     logActivity,
     saveMetric,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+};
+
+// Legacy exports for compatibility
+export const login = (email: string, password: string) => {
+  throw new Error('Use signIn instead of login');
+};
+
+export const register = (email: string, password: string, name: string) => {
+  throw new Error('Use signUp instead of register');
+};
+
+export const logout = () => {
+  throw new Error('Use signOut instead of logout');
 };
