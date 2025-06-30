@@ -47,6 +47,21 @@ export const BottomNavigation: React.FC<BottomNavigationProps> = ({ activeTab, o
           );
         })}
       </div>
+      
+      {/* Mobile Bolt Badge */}
+      <div className="flex justify-center pb-2">
+        <a 
+          href="https://bolt.new" 
+          target="_blank" 
+          rel="noopener noreferrer"
+          className="flex items-center space-x-1 px-2 py-1 bg-black text-white rounded-full hover:bg-gray-800 transition-all duration-300 hover:scale-105 md:hidden"
+        >
+          <div className="w-4 h-4 bg-white rounded-full flex items-center justify-center">
+            <span className="text-black font-bold text-xs">b</span>
+          </div>
+          <span className="text-xs font-medium">Powered by Bolt</span>
+        </a>
+      </div>
     </div>
   );
 };

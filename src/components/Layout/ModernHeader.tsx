@@ -35,6 +35,21 @@ export const ModernHeader: React.FC = () => {
             </div>
           </div>
 
+          {/* Center - Bolt Badge */}
+          <div className="hidden md:flex items-center">
+            <a 
+              href="https://bolt.new" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="flex items-center space-x-2 px-3 py-1.5 bg-black text-white rounded-full hover:bg-gray-800 transition-all duration-300 hover:scale-105 group"
+            >
+              <div className="w-6 h-6 bg-white rounded-full flex items-center justify-center">
+                <span className="text-black font-bold text-sm">b</span>
+              </div>
+              <span className="text-xs font-medium">Powered by Bolt</span>
+            </a>
+          </div>
+
           {/* User Actions */}
           <div className="flex items-center space-x-3">
             {/* Dark Mode Toggle */}
