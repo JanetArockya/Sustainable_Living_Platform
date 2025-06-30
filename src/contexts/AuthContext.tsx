@@ -20,9 +20,11 @@ interface AuthContextType {
   user: User | null;
   token: string | null;
   login: (email: string, password: string) => Promise<void>;
+  register: (email: string, password: string, name: string) => Promise<void>;
   logout: () => void;
   isLoading: boolean;
   logActivity: (activityType: string, activityData: any) => Promise<void>;
+  saveMetric: (metricType: string, value: number, unit: string) => Promise<void>;
 }
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
@@ -84,6 +86,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const register = async (email: string, password: string, name: string) => {
+    try {
+      const response = await fetch(`${API_BASE_URL}/register`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ email, password, name }),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.error || 'Registration failed');
+      }
+
+      const data = await response.json();
+      
+      setToken(data.token);
+      setUser(data.user);
+      
+      localStorage.setItem('token', data.token);
+      localStorage.setItem('user', JSON.stringify(data.user));
+    } catch (error) {
+      throw error;
+    }
+  };
+
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -108,13 +137,32 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     }
   };
 
+  const saveMetric = async (metricType: string, value: number, unit: string) => {
+    if (!token) return;
+
+    try {
+      await fetch(`${API_BASE_URL}/user/metrics`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${token}`,
+        },
+        body: JSON.stringify({ metricType, value, unit }),
+      });
+    } catch (error) {
+      console.error('Failed to save metric:', error);
+    }
+  };
+
   const value = {
     user,
     token,
     login,
+    register,
     logout,
     isLoading,
     logActivity,
+    saveMetric,
   };
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

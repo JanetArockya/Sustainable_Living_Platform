@@ -10,7 +10,10 @@ const PORT = process.env.PORT || 3001;
 const JWT_SECRET = 'your-secret-key-change-in-production';
 
 // Middleware
-app.use(cors());
+app.use(cors({
+  origin: 'http://localhost:5173',
+  credentials: true
+}));
 app.use(express.json());
 
 // Initialize SQLite database
@@ -98,6 +101,20 @@ db.serialize(() => {
     )
   `);
 
+  // Usage metrics table
+  db.run(`
+    CREATE TABLE IF NOT EXISTS usage_metrics (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      user_id INTEGER,
+      metric_type TEXT NOT NULL,
+      value REAL NOT NULL,
+      unit TEXT,
+      date DATE DEFAULT CURRENT_DATE,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (user_id) REFERENCES users (id)
+    )
+  `);
+
   // Insert demo users
   const demoUsers = [
     {
@@ -118,6 +135,34 @@ db.serialize(() => {
     db.run(
       'INSERT OR IGNORE INTO users (email, password, name, avatar, total_points, level) VALUES (?, ?, ?, ?, ?, ?)',
       [user.email, user.password, user.name, user.avatar, Math.floor(Math.random() * 3000) + 1000, Math.floor(Math.random() * 8) + 1]
+    );
+  });
+
+  // Insert sample goals for demo users
+  const sampleGoals = [
+    { title: 'Reduce Energy Usage', description: 'Cut household energy consumption by 25%', target_value: 25, unit: '%', category: 'energy' },
+    { title: 'Carbon Neutral', description: 'Achieve net-zero carbon footprint', target_value: 0, unit: 'tons CO2', category: 'carbon' },
+    { title: 'Water Conservation', description: 'Reduce water usage by 30%', target_value: 30, unit: '%', category: 'water' }
+  ];
+
+  sampleGoals.forEach(goal => {
+    db.run(
+      'INSERT OR IGNORE INTO user_goals (user_id, title, description, target_value, current_value, unit, deadline, category) VALUES (?, ?, ?, ?, ?, ?, ?, ?)',
+      [1, goal.title, goal.description, goal.target_value, Math.floor(Math.random() * goal.target_value), goal.unit, '2024-12-31', goal.category]
+    );
+  });
+
+  // Insert sample badges
+  const sampleBadges = [
+    { name: 'Energy Saver', description: 'Reduced energy consumption by 20%', category: 'energy' },
+    { name: 'Carbon Crusher', description: 'Achieved carbon neutral for a month', category: 'carbon' },
+    { name: 'Water Warrior', description: 'Saved 500 gallons of water', category: 'water' }
+  ];
+
+  sampleBadges.forEach(badge => {
+    db.run(
+      'INSERT OR IGNORE INTO user_badges (user_id, name, description, category) VALUES (?, ?, ?, ?)',
+      [1, badge.name, badge.description, badge.category]
     );
   });
 });
@@ -188,6 +233,58 @@ app.post('/api/login', async (req, res) => {
       }
     });
   });
+});
+
+// Register route
+app.post('/api/register', async (req, res) => {
+  const { email, password, name } = req.body;
+
+  if (!email || !password || !name) {
+    return res.status(400).json({ error: 'Email, password, and name are required' });
+  }
+
+  try {
+    const hashedPassword = await bcrypt.hash(password, 10);
+    
+    db.run(
+      'INSERT INTO users (email, password, name) VALUES (?, ?, ?)',
+      [email, hashedPassword, name],
+      function(err) {
+        if (err) {
+          if (err.code === 'SQLITE_CONSTRAINT') {
+            return res.status(400).json({ error: 'Email already exists' });
+          }
+          return res.status(500).json({ error: 'Database error' });
+        }
+
+        const token = jwt.sign(
+          { userId: this.lastID, email },
+          JWT_SECRET,
+          { expiresIn: '24h' }
+        );
+
+        res.json({
+          token,
+          user: {
+            id: this.lastID,
+            email,
+            name,
+            joinDate: new Date().toISOString(),
+            totalPoints: 0,
+            level: 1,
+            preferences: {
+              notifications: true,
+              sustainabilityTips: true,
+              weeklyReports: true,
+              challengeUpdates: true
+            }
+          }
+        });
+      }
+    );
+  } catch (error) {
+    res.status(500).json({ error: 'Server error' });
+  }
 });
 
 // Get user profile
@@ -273,6 +370,54 @@ app.post('/api/user/activity', authenticateToken, (req, res) => {
   );
 });
 
+// Save usage metrics
+app.post('/api/user/metrics', authenticateToken, (req, res) => {
+  const { metricType, value, unit } = req.body;
+
+  db.run(
+    'INSERT INTO usage_metrics (user_id, metric_type, value, unit) VALUES (?, ?, ?, ?)',
+    [req.user.userId, metricType, value, unit],
+    function(err) {
+      if (err) {
+        return res.status(500).json({ error: 'Database error' });
+      }
+      res.json({ id: this.lastID, message: 'Metric saved successfully' });
+    }
+  );
+});
+
+// Get usage metrics
+app.get('/api/user/metrics', authenticateToken, (req, res) => {
+  const { type, startDate, endDate } = req.query;
+  
+  let query = 'SELECT * FROM usage_metrics WHERE user_id = ?';
+  let params = [req.user.userId];
+  
+  if (type) {
+    query += ' AND metric_type = ?';
+    params.push(type);
+  }
+  
+  if (startDate) {
+    query += ' AND date >= ?';
+    params.push(startDate);
+  }
+  
+  if (endDate) {
+    query += ' AND date <= ?';
+    params.push(endDate);
+  }
+  
+  query += ' ORDER BY timestamp DESC';
+
+  db.all(query, params, (err, metrics) => {
+    if (err) {
+      return res.status(500).json({ error: 'Database error' });
+    }
+    res.json(metrics);
+  });
+});
+
 // Update user profile
 app.put('/api/user/profile', authenticateToken, (req, res) => {
   const { name, avatar, preferences } = req.body;
@@ -356,6 +501,11 @@ app.get('/api/user/carbon-data', authenticateToken, (req, res) => {
       res.json(data || {});
     }
   );
+});
+
+// Health check endpoint
+app.get('/api/health', (req, res) => {
+  res.json({ status: 'OK', message: 'Server is running' });
 });
 
 app.listen(PORT, () => {
