@@ -139,7 +139,7 @@ const UserSchema: Schema = new Schema({
 });
 
 // Encrypt password using bcrypt
-UserSchema.pre('save', async function(next) {
+UserSchema.pre('save', async function(this: IUser, next: any) {
   if (!this.isModified('password')) {
     next();
   }
@@ -149,14 +149,14 @@ UserSchema.pre('save', async function(next) {
 });
 
 // Sign JWT and return
-UserSchema.methods.getSignedJwtToken = function() {
+UserSchema.methods.getSignedJwtToken = function(this: IUser) {
   return jwt.sign({ id: this._id }, process.env.JWT_SECRET!, {
     expiresIn: process.env.JWT_EXPIRE
   });
 };
 
 // Match user entered password to hashed password in database
-UserSchema.methods.matchPassword = async function(enteredPassword: string) {
+UserSchema.methods.matchPassword = async function(this: IUser, enteredPassword: string) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 

@@ -6,6 +6,8 @@ import User from '../models/User';
 
 interface AuthRequest extends Request {
   user?: any;
+  body: any;
+  params: any;
 }
 
 // @desc    Register user

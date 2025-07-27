@@ -108,7 +108,7 @@ const ChallengeSchema: Schema = new Schema({
 });
 
 // Update status based on dates
-ChallengeSchema.pre('save', function(next) {
+ChallengeSchema.pre('save', function(this: IChallenge, next: any) {
   const now = new Date();
   
   if (now < this.startDate) {
