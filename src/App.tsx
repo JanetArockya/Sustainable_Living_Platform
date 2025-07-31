@@ -9,10 +9,10 @@ import { CommunityHub } from './components/Community/CommunityHub';
 import { ModernProfile } from './components/Profile/ModernProfile';
 
 const AppContent: React.FC = () => {
-  const { user, isLoading } = useAuth();
+  const { user, loading } = useAuth();
   const [activeTab, setActiveTab] = useState('dashboard');
 
-  if (isLoading) {
+  if (loading) {
     return (
       <div className="min-h-screen bg-gradient-to-br from-emerald-50 via-green-50 to-teal-50 flex items-center justify-center">
         <div className="text-center">

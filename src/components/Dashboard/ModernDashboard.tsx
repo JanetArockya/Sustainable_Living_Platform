@@ -1,6 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { TrendingUp, TrendingDown, Zap, Droplets, Leaf, Target, Calendar, Award, Activity, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 interface Goal {
   id: number;
@@ -32,14 +33,14 @@ interface Metric {
 }
 
 export const ModernDashboard: React.FC = () => {
-  const { user, token, logActivity, saveMetric } = useAuth();
+  const { user, logActivity, saveMetric } = useAuth();
   const [goals, setGoals] = useState<Goal[]>([]);
   const [badges, setBadges] = useState<Badge[]>([]);
   const [carbonData, setCarbonData] = useState<any>({});
   const [metrics, setMetrics] = useState<Metric[]>([]);
 
   useEffect(() => {
-    if (token) {
+    if (user) {
       fetchUserData();
       logActivity('dashboard_view', { timestamp: new Date().toISOString() });
       
@@ -48,29 +49,21 @@ export const ModernDashboard: React.FC = () => {
       saveMetric('water_usage', 1245, 'gallons');
       saveMetric('carbon_footprint', 6.2, 'tons');
     }
-  }, [token]);
+  }, [user]);
 
   const fetchUserData = async () => {
     try {
-      const [goalsRes, badgesRes, carbonRes, metricsRes] = await Promise.all([
-        fetch('http://localhost:3001/api/user/goals', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('http://localhost:3001/api/user/badges', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('http://localhost:3001/api/user/carbon-data', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        }),
-        fetch('http://localhost:3001/api/user/metrics', {
-          headers: { 'Authorization': `Bearer ${token}` }
-        })
+      const [goalsData, badgesData, carbonData, metricsData] = await Promise.all([
+        apiService.getUserGoals(),
+        apiService.getUserBadges(),
+        apiService.getCarbonData(),
+        apiService.getUserMetrics()
       ]);
 
-      if (goalsRes.ok) setGoals(await goalsRes.json());
-      if (badgesRes.ok) setBadges(await badgesRes.json());
-      if (carbonRes.ok) setCarbonData(await carbonRes.json());
-      if (metricsRes.ok) setMetrics(await metricsRes.json());
+      if (goalsData.success) setGoals(goalsData.data);
+      if (badgesData.success) setBadges(badgesData.data);
+      if (carbonData.success) setCarbonData(carbonData.data.monthly || []);
+      if (metricsData.success) setMetrics(metricsData.data);
     } catch (error) {
       console.error('Failed to fetch user data:', error);
     }

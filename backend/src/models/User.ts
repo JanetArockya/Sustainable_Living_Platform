@@ -139,24 +139,26 @@ const UserSchema: Schema = new Schema({
 });
 
 // Encrypt password using bcrypt
-UserSchema.pre('save', async function(this: IUser, next: any) {
+UserSchema.pre('save', async function(next: any) {
   if (!this.isModified('password')) {
     next();
   }
 
   const salt = await bcrypt.genSalt(10);
-  this.password = await bcrypt.hash(this.password, salt);
+  this.password = await bcrypt.hash(this.password as string, salt);
 });
 
 // Sign JWT and return
-UserSchema.methods.getSignedJwtToken = function(this: IUser) {
-  return jwt.sign({ id: this._id }, process.env.JWT_SECRET!, {
-    expiresIn: process.env.JWT_EXPIRE
-  });
+UserSchema.methods.getSignedJwtToken = function() {
+  return jwt.sign(
+    { id: this._id }, 
+    process.env.JWT_SECRET || 'fallback_secret', 
+    { expiresIn: process.env.JWT_EXPIRE || '7d' } as jwt.SignOptions
+  );
 };
 
 // Match user entered password to hashed password in database
-UserSchema.methods.matchPassword = async function(this: IUser, enteredPassword: string) {
+UserSchema.methods.matchPassword = async function(enteredPassword: string) {
   return await bcrypt.compare(enteredPassword, this.password);
 };
 

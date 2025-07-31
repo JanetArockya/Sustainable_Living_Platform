@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
-import { User, Settings, Target, Award, Bell, Edit3, Camera, Save, Calendar, Activity, TrendingUp, BarChart3 } from 'lucide-react';
+import { User, Edit3, Camera, Save, Calendar, Activity, TrendingUp, BarChart3 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import { apiService } from '../../services/api';
 
 interface ActivityItem {
   id: number;
@@ -19,7 +20,7 @@ interface Metric {
 }
 
 export const ModernProfile: React.FC = () => {
-  const { user, token, logActivity } = useAuth();
+  const { user, logActivity } = useAuth();
   const [isEditing, setIsEditing] = useState(false);
   const [activities, setActivities] = useState<ActivityItem[]>([]);
   const [metrics, setMetrics] = useState<Metric[]>([]);
@@ -27,21 +28,18 @@ export const ModernProfile: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'overview' | 'activities' | 'metrics'>('overview');
 
   useEffect(() => {
-    if (token) {
+    if (user) {
       fetchActivities();
       fetchMetrics();
       logActivity('profile_view', { timestamp: new Date().toISOString() });
     }
-  }, [token, selectedDate]);
+  }, [user, selectedDate]);
 
   const fetchActivities = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/user/activities?date=${selectedDate}&limit=20`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setActivities(data);
+      const data = await apiService.getUserActivities(selectedDate, 20);
+      if (data.success) {
+        setActivities(data.data);
       }
     } catch (error) {
       console.error('Failed to fetch activities:', error);
@@ -50,12 +48,9 @@ export const ModernProfile: React.FC = () => {
 
   const fetchMetrics = async () => {
     try {
-      const response = await fetch(`http://localhost:3001/api/user/metrics`, {
-        headers: { 'Authorization': `Bearer ${token}` }
-      });
-      if (response.ok) {
-        const data = await response.json();
-        setMetrics(data);
+      const data = await apiService.getUserMetrics();
+      if (data.success) {
+        setMetrics(data.data);
       }
     } catch (error) {
       console.error('Failed to fetch metrics:', error);
