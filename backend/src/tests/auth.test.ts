@@ -1,6 +1,7 @@
 import request from 'supertest';
-import app from '../../server';
-import User from '../../models/User';
+import app from '../app';
+import User from '../models/User';
+import './setup';
 
 describe('Auth Endpoints', () => {
   describe('POST /api/auth/register', () => {

@@ -5,16 +5,35 @@ import jwt from 'jsonwebtoken';
 export interface IUser extends Document {
   name: string;
   email: string;
-  password: string; // Encrypted with bcrypt
+  password: string;
   role: 'user' | 'admin' | 'moderator';
+  avatar?: string;
   carbonFootprint: number;
   sustainabilityScore: number;
-  goals: Array<Goal>;
-  preferences: UserPreferences;
+  goals: {
+    type: 'carbon_reduction' | 'energy_saving' | 'waste_reduction' | 'water_conservation';
+    target: number;
+    current: number;
+    deadline: Date;
+  }[];
+  preferences: {
+    notifications: boolean;
+    publicProfile: boolean;
+    dataSharing: boolean;
+    language: string;
+    units: 'metric' | 'imperial';
+  };
   achievements: string[];
-  joinedChallenges: ObjectId[];
-  location?: LocationData;
-  // ... timestamps
+  joinedChallenges: mongoose.Types.ObjectId[];
+  location?: {
+    country: string;
+    city: string;
+    coordinates?: [number, number];
+  };
+  createdAt: Date;
+  updatedAt: Date;
+  matchPassword(enteredPassword: string): Promise<boolean>;
+  getSignedJwtToken(): string;
 }
 
 const UserSchema: Schema = new Schema({

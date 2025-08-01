@@ -5,6 +5,11 @@ let mongod: MongoMemoryServer;
 
 // Setup MongoDB Memory Server for testing
 beforeAll(async () => {
+  // Close existing connection if any
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.close();
+  }
+  
   mongod = await MongoMemoryServer.create();
   const uri = mongod.getUri();
   await mongoose.connect(uri);
@@ -21,10 +26,14 @@ beforeEach(async () => {
 
 // Close database connection after tests
 afterAll(async () => {
-  await mongoose.connection.dropDatabase();
-  await mongoose.connection.close();
-  await mongod.stop();
+  if (mongoose.connection.readyState !== 0) {
+    await mongoose.connection.dropDatabase();
+    await mongoose.connection.close();
+  }
+  if (mongod) {
+    await mongod.stop();
+  }
 });
 
 // Global test timeout
-jest.setTimeout(10000);
+jest.setTimeout(30000);

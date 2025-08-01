@@ -1,0 +1,23 @@
+# Railway Deployment Configuration
+version: 2
+
+build:
+  builder: nixpacks
+  buildCommand: npm ci && npm run build
+  
+services:
+  backend:
+    source: .
+    healthcheckPath: /api/health
+    healthcheckTimeout: 300
+    restartPolicyType: ON_FAILURE
+    
+    variables:
+      NODE_ENV: production
+      PORT: ${{RAILWAY_PORT}}
+      
+      # You'll need to add these in Railway dashboard:
+      # MONGODB_URI: mongodb+srv://username:password@cluster.mongodb.net/sustainable_living
+      # JWT_SECRET: your-super-secure-jwt-secret-here
+      # JWT_EXPIRE: 7d
+      # CLIENT_URL: https://your-frontend-url.railway.app
