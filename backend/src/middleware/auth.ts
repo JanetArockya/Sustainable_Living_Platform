@@ -4,6 +4,13 @@ import User from '../models/User';
 
 interface AuthRequest extends Request {
   user?: any;
+  headers: any;
+}
+
+interface JwtPayload {
+  id: string;
+  iat?: number;
+  exp?: number;
 }
 
 export const protect = async (req: AuthRequest, res: Response, next: NextFunction): Promise<void> => {
@@ -22,7 +29,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
   }
 
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as { id: string };
+    const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
     req.user = await User.findById(decoded.id).select('-password');
     
     if (!req.user) {
@@ -34,7 +41,7 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
     }
 
     next();
-  } catch (error) {
+  } catch (error: any) {
     res.status(401).json({
       success: false,
       message: 'Not authorized to access this route'
