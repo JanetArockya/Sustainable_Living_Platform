@@ -6,7 +6,9 @@
   "scripts": {
     "start": "node dist/server.js",
     "dev": "nodemon src/server.ts",
-    "build": "tsc",
+    "build": "npm run clean && tsc",
+    "clean": "rimraf dist",
+    "postbuild": "echo Build completed successfully",
     "test": "jest",
     "test:watch": "jest --watch",
     "test:coverage": "jest --coverage",
@@ -14,6 +16,7 @@
     "lint:fix": "eslint src/**/*.ts --fix"
   },
   "dependencies": {
+    "@types/node": "^20.8.7",
     "bcryptjs": "^2.4.3",
     "cloudinary": "^1.41.0",
     "compression": "^1.7.4",
@@ -31,6 +34,7 @@
     "passport": "^0.6.0",
     "passport-google-oauth20": "^2.0.0",
     "passport-jwt": "^4.0.1",
+    "rimraf": "^3.0.2",
     "socket.io": "^4.7.5",
     "typescript": "^5.2.2"
   },
@@ -43,7 +47,6 @@
     "@types/jsonwebtoken": "^9.0.4",
     "@types/morgan": "^1.9.7",
     "@types/multer": "^1.4.8",
-    "@types/node": "^20.8.7",
     "@types/nodemailer": "^6.4.13",
     "@types/passport": "^1.0.14",
     "@types/passport-google-oauth20": "^2.0.13",
@@ -68,6 +71,10 @@
     "OAuth",
     "REST API"
   ],
+  "engines": {
+    "node": ">=18.0.0",
+    "npm": ">=8.0.0"
+  },
   "author": "Your Name",
   "license": "MIT"
 }
