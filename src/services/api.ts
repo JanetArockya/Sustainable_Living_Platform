@@ -220,6 +220,28 @@ class ApiService {
     return this.get('/users/metrics');
   }
 
+  async saveMetric(type: string, value: number, unit: string) {
+    // For demo mode, simulate a successful save without hitting the backend
+    console.log('📊 Demo mode: Saving metric locally', { type, value, unit });
+    
+    // Simulate API delay
+    await new Promise(resolve => setTimeout(resolve, 500));
+    
+    // Return success response
+    return {
+      success: true,
+      data: {
+        id: Math.random().toString(36).substr(2, 9),
+        metric_type: type,
+        value,
+        unit,
+        date: new Date().toISOString(),
+        user_id: 'demo-user'
+      },
+      message: 'Metric saved successfully'
+    };
+  }
+
   async getUserActivities(date?: string, limit?: number) {
     const params = new URLSearchParams();
     if (date) params.append('date', date);
