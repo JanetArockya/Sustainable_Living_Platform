@@ -1,0 +1,17 @@
+# Vercel Environment Variables Configuration
+# Add these in your Vercel project settings
+
+# Required Environment Variables:
+VITE_API_BASE_URL=https://your-backend-url.onrender.com/api
+
+# Optional (for production features):
+NODE_ENV=production
+VITE_ENABLE_ANALYTICS=true
+
+# Instructions:
+# 1. Go to https://vercel.com/dashboard
+# 2. Select your project "sustainable-living-platform"
+# 3. Go to Settings > Environment Variables
+# 4. Add each variable above with its corresponding value
+# 5. Make sure to select "Production" environment for each variable
+# 6. After adding all variables, go to Deployments tab and click "Redeploy" to apply changes
