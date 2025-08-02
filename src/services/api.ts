@@ -2,6 +2,7 @@
 class ApiService {
   private baseURL: string;
   private token: string | null = null;
+  private demoMode: boolean = true; // Enable demo mode by default
 
   constructor() {
     this.baseURL = import.meta.env.VITE_API_URL || 'http://localhost:5000/api';
@@ -9,9 +10,18 @@ class ApiService {
 
   setToken(token: string | null) {
     this.token = token;
+    // Enable demo mode if using demo token
+    this.demoMode = token === 'demo-jwt-token-abc123';
   }
 
   private async request(endpoint: string, options: RequestInit = {}) {
+    // In demo mode, return mock data instead of making HTTP requests
+    if (this.demoMode) {
+      console.log('🎯 Demo mode: Returning mock data for', endpoint);
+      await new Promise(resolve => setTimeout(resolve, 300)); // Simulate network delay
+      return this.getMockData(endpoint);
+    }
+
     const url = `${this.baseURL}${endpoint}`;
     
     const headers: Record<string, string> = {
@@ -48,19 +58,13 @@ class ApiService {
       }
     } catch (error) {
       console.error('API request failed:', error);
-      
-      // Return mock data for demo mode when backend is not available
-      if (error instanceof TypeError && error.message.includes('fetch')) {
-        return this.getMockData(endpoint);
-      }
-      
       throw error;
     }
   }
 
   private getMockData(endpoint: string) {
     // Return appropriate mock data based on endpoint
-    if (endpoint.includes('/user/goals')) {
+    if (endpoint.includes('/users/goals')) {
       return {
         success: true,
         data: [
@@ -90,7 +94,7 @@ class ApiService {
       };
     }
     
-    if (endpoint.includes('/user/badges')) {
+    if (endpoint.includes('/users/badges')) {
       return {
         success: true,
         data: [
@@ -114,7 +118,7 @@ class ApiService {
       };
     }
     
-    if (endpoint.includes('/user/carbon-data')) {
+    if (endpoint.includes('/users/carbon-data')) {
       return {
         success: true,
         data: {
@@ -137,7 +141,7 @@ class ApiService {
       };
     }
     
-    if (endpoint.includes('/user/metrics')) {
+    if (endpoint.includes('/users/metrics')) {
       return {
         success: true,
         data: [
@@ -148,7 +152,7 @@ class ApiService {
       };
     }
 
-    if (endpoint.includes('/user/activities')) {
+    if (endpoint.includes('/users/activities')) {
       return {
         success: true,
         data: [
