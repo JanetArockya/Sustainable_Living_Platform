@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { TrendingUp, TrendingDown, Zap, Droplets, Leaf, Target, Calendar, Award, Activity, BarChart3 } from 'lucide-react';
+import { TrendingUp, TrendingDown, Zap, Droplets, Leaf, Target, Calendar, Award, Activity, BarChart3, Calculator } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
 import { apiService } from '../../services/api';
 
@@ -38,6 +38,18 @@ export const ModernDashboard: React.FC = () => {
   const [badges, setBadges] = useState<Badge[]>([]);
   const [carbonData, setCarbonData] = useState<any>({});
   const [metrics, setMetrics] = useState<Metric[]>([]);
+  
+  // Test metric input states
+  const [energyInput, setEnergyInput] = useState('');
+  const [waterInput, setWaterInput] = useState('');
+  
+  const handleSaveTestMetric = async (type: string, value: string, unit: string) => {
+    const numValue = parseFloat(value);
+    if (numValue > 0) {
+      await saveMetric(type, numValue, unit);
+      alert(`✅ Saved ${type}: ${numValue} ${unit}`);
+    }
+  };
 
   useEffect(() => {
     if (user) {
@@ -135,7 +147,7 @@ export const ModernDashboard: React.FC = () => {
             <div className="bg-white/20 backdrop-blur-sm rounded-2xl px-6 py-3 border border-white/20">
               <div className="flex items-center space-x-2">
                 <BarChart3 className="h-5 w-5" />
-                <span className="font-semibold">{user?.totalPoints.toLocaleString()} points</span>
+                <span className="font-semibold">{user?.totalPoints?.toLocaleString() || '0'} points</span>
               </div>
             </div>
           </div>
@@ -172,6 +184,60 @@ export const ModernDashboard: React.FC = () => {
             </div>
           );
         })}
+      </div>
+
+      {/* Test Metric Input Form */}
+      <div className="bg-white dark:bg-gray-800 rounded-3xl p-8 shadow-lg border border-gray-100 dark:border-gray-700">
+        <div className="flex items-center mb-6">
+          <Calculator className="h-6 w-6 text-blue-500 mr-3" />
+          <h3 className="text-2xl font-bold text-gray-900 dark:text-white">Test Metric Saving</h3>
+        </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Energy Usage (kWh)
+              </label>
+              <div className="flex space-x-3">
+                <input
+                  type="number"
+                  value={energyInput}
+                  onChange={(e) => setEnergyInput(e.target.value)}
+                  placeholder="Enter energy usage"
+                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+                <button
+                  onClick={() => handleSaveTestMetric('energy_usage', energyInput, 'kWh')}
+                  className="px-6 py-3 bg-emerald-500 text-white rounded-xl hover:bg-emerald-600 transition-colors font-medium"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="space-y-4">
+            <div>
+              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+                Water Usage (gallons)
+              </label>
+              <div className="flex space-x-3">
+                <input
+                  type="number"
+                  value={waterInput}
+                  onChange={(e) => setWaterInput(e.target.value)}
+                  placeholder="Enter water usage"
+                  className="flex-1 px-4 py-3 border border-gray-300 dark:border-gray-600 rounded-xl focus:ring-2 focus:ring-emerald-500 focus:border-transparent dark:bg-gray-700 dark:text-white"
+                />
+                <button
+                  onClick={() => handleSaveTestMetric('water_usage', waterInput, 'gallons')}
+                  className="px-6 py-3 bg-blue-500 text-white rounded-xl hover:bg-blue-600 transition-colors font-medium"
+                >
+                  Save
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       {/* Active Goals */}
