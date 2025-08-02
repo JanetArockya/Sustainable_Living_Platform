@@ -3,6 +3,17 @@ import { protect } from '../middleware/auth';
 
 const router = express.Router();
 
+// @desc    Test endpoint (no auth required)
+// @route   GET /api/users/test
+// @access  Public
+router.get('/test', (req: any, res: any) => {
+  res.status(200).json({
+    success: true,
+    message: 'API endpoint is working!',
+    timestamp: new Date().toISOString()
+  });
+});
+
 // @desc    Get all users
 // @route   GET /api/users
 // @access  Private
