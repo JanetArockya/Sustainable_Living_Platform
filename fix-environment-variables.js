@@ -1,0 +1,20 @@
+// Quick Fix Script - Run this after backend deployment
+console.log('🔧 Frontend Environment Variable Update for Vercel');
+console.log('');
+console.log('1. Go to: https://vercel.com/dashboard');
+console.log('2. Find project: sustainable-living-platform');
+console.log('3. Go to: Settings → Environment Variables');
+console.log('4. Add/Update this variable:');
+console.log('');
+console.log('   Variable Name: VITE_API_URL');
+console.log('   Value: https://YOUR_BACKEND_URL.onrender.com/api');
+console.log('');
+console.log('5. Redeploy the frontend');
+console.log('');
+console.log('Example backend URLs to try:');
+console.log('- https://sustainable-living-backend.onrender.com/api');
+console.log('- https://sustainable-living-backend-xyz.onrender.com/api');
+console.log('');
+console.log('✅ Test health endpoint first:');
+console.log('Visit: https://YOUR_BACKEND_URL.onrender.com/health');
+console.log('Should return: {"status":"OK","message":"..."}');
