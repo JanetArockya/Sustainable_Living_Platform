@@ -29,6 +29,19 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
   }
 
   try {
+    // Demo mode bypass for testing
+    if (token === 'demo-jwt-token-abc123') {
+      req.user = {
+        id: 'demo-user-123',
+        email: 'demo@sustainableplatform.com',
+        username: 'EcoWarrior',
+        name: 'Demo User',
+        role: 'user'
+      };
+      next();
+      return;
+    }
+
     const decoded = jwt.verify(token, process.env.JWT_SECRET!) as JwtPayload;
     req.user = await User.findById(decoded.id).select('-password');
     
