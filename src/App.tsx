@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { AuthProvider, useAuth } from './contexts/AuthContext';
 import { ModernAuth } from './components/Auth/ModernAuth';
 import { ModernHeader } from './components/Layout/ModernHeader';
@@ -10,7 +11,6 @@ import { ModernProfile } from './components/Profile/ModernProfile';
 
 const AppContent: React.FC = () => {
   const { user, loading } = useAuth();
-  const [activeTab, setActiveTab] = useState('dashboard');
 
   if (loading) {
     return (
@@ -27,31 +27,25 @@ const AppContent: React.FC = () => {
     return <ModernAuth />;
   }
 
-  const renderActiveTab = () => {
-    switch (activeTab) {
-      case 'dashboard':
-        return <ModernDashboard />;
-      case 'challenges':
-        return <ModernChallenges />;
-      case 'community':
-        return <CommunityHub />;
-      case 'profile':
-        return <ModernProfile />;
-      default:
-        return <ModernDashboard />;
-    }
-  };
-
   return (
-    <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
-      <ModernHeader />
-      
-      <main className="container mx-auto px-4 py-6 max-w-4xl">
-        {renderActiveTab()}
-      </main>
-      
-      <BottomNavigation activeTab={activeTab} onTabChange={setActiveTab} />
-    </div>
+    <Router>
+      <div className="min-h-screen bg-gray-50 dark:bg-gray-900 transition-colors duration-300">
+        <ModernHeader />
+        
+        <main className="container mx-auto px-4 py-6 max-w-4xl">
+          <Routes>
+            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            <Route path="/dashboard" element={<ModernDashboard />} />
+            <Route path="/challenges" element={<ModernChallenges />} />
+            <Route path="/community" element={<CommunityHub />} />
+            <Route path="/profile" element={<ModernProfile />} />
+            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+          </Routes>
+        </main>
+
+        <BottomNavigation />
+      </div>
+    </Router>
   );
 };
 
