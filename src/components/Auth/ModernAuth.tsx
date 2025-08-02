@@ -18,15 +18,26 @@ export const ModernAuth: React.FC = () => {
     setError('');
 
     try {
+      let result;
       if (isSignUp) {
         if (!name.trim()) {
           throw new Error('Name is required');
         }
-        await signUp(email, password, name);
+        result = await signUp(email, password, name);
       } else {
-        await signIn(email, password);
+        result = await signIn(email, password);
       }
+      
+      // Check if the result has an error
+      if (result && result.error) {
+        throw new Error(result.error);
+      }
+      
+      // Success - the AuthContext will handle the redirect
+      console.log('✅ Authentication successful');
+      
     } catch (err: any) {
+      console.error('Authentication error:', err);
       setError(err.message || `${isSignUp ? 'Sign up' : 'Sign in'} failed. Please try again.`);
     } finally {
       setIsLoading(false);
@@ -74,6 +85,15 @@ export const ModernAuth: React.FC = () => {
                 : 'Sign in to continue your eco-friendly adventure'
               }
             </p>
+          </div>
+
+          {/* Demo Mode Indicator */}
+          <div className="mb-6 p-4 bg-blue-50 border border-blue-200 rounded-2xl flex items-center space-x-3">
+            <div className="w-2 h-2 bg-blue-500 rounded-full animate-pulse"></div>
+            <div>
+              <p className="text-blue-700 text-sm font-medium">🎯 Demo Mode Active</p>
+              <p className="text-blue-600 text-xs">Use any email and password to login</p>
+            </div>
           </div>
 
           {error && (
