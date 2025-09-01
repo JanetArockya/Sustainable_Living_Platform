@@ -36,7 +36,9 @@ export const protect = async (req: AuthRequest, res: Response, next: NextFunctio
         email: 'demo@sustainableplatform.com',
         username: 'EcoWarrior',
         name: 'Demo User',
-        role: 'user'
+        role: 'user',
+        carbonFootprint: 6.2,
+        sustainabilityScore: 87
       };
       next();
       return;
